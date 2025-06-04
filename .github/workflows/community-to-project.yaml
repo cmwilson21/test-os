@@ -1,0 +1,55 @@
+name: Add Community Issues/PRs to Project
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  add_to_project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if author is NOT an org member
+        id: check_member
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const org = 'wolfi-dev';
+            const author = context.payload.sender.login;
+
+            // Check if the author is a member of the org
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org,
+                username: author
+              });
+              core.setOutput('is_member', 'true');
+            } catch (err) {
+              core.setOutput('is_member', 'false');
+            }
+
+      - name: Add to GitHub Project if community member
+        if: steps.check_member.outputs.is_member == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Replace with your project and org details
+            const projectId = 4; // Change to your Project ID
+            const owner = 'wolfi-dev';
+            const repo = context.repo.repo;
+            let content_id, content_type;
+
+            if (context.eventName === 'issues') {
+              content_id = context.payload.issue.node_id;
+              content_type = 'Issue';
+            } else {
+              content_id = context.payload.pull_request.node_id;
+              content_type = 'PullRequest';
+            }
+
+            // Example: log what would happen
+            console.log(`Would add ${content_type} ${content_id} to project ${projectId}`);
+
+            // To actually add, you need to use GraphQL API for Projects Beta (or REST for Classic)
+            // For test: just log. For real: implement the mutation.
